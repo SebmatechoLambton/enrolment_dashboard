@@ -207,9 +207,8 @@ def enroment_dashboard_update(intake:str):
 		print('[Info] Total registrations compiled successfully.') 
 		logger.info('TotalRegistrations compiled successfully.')
 
-		side_files_handling.setting_order_budget_ottawa(
-			terms = terms, 
-			cnxn = cnxn).to_excel(excel_writer = writer, 
+		side_files_handling.setting_order_budget_ottawa(terms = terms, 
+												  cnxn = cnxn).to_excel(excel_writer = writer, 
                                                             sheet_name = 'Ottawa', 
                                                             index = False)# ok
 		print('[Info] Ottawa Information compiled successfully.') 
