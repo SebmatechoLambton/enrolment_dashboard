@@ -1,5 +1,6 @@
 import pandas as pd
 from enrolment_utils import custom_sharepoint, global_params, python_utils
+
 from typing import List
 
 
@@ -138,3 +139,57 @@ def program_information(order: pd.DataFrame,
     dataframe = pd.read_sql(query, cnxn)
     dataframe = dataframe[dataframe['program'].isin(list(order['Program'].unique()))]
     return dataframe
+
+
+def setting_order_budget_ottawa(terms: List[str], 
+                                cnxn = None,
+                                sharepoint_base_url = 'https://mylambton.sharepoint.com/sites/EnrolmentDashboard'): 
+    """
+    This function takes projections file and extract list of programs to be reported for such intake (by keeping 
+    only programs where there is a non-zero budget flag and are active programs) for Ottawa. These are the 'order' 
+    files providing the whole project with the list of programs of interest and name of school. Also, it sets apart a 
+    file with information about budget for every program. 
+    
+    Args: 
+        terms (List[str]): List of terms to be reported. (this function is going to take the letter only, which flags the intake)
+    
+    returns: 
+        pd.DataFrame containing budget and registration count for Ottawa programs. 
+    
+    last update: June 13, 2024.
+    """
+    # Creating connection if none is provided
+    if cnxn is None: 
+        cnxn = python_utils.get_connection()
+
+    # Retrieving Ottawa projections from projections file
+    projections = custom_sharepoint.sharepoint_download_excel(sharepoint_base_url = sharepoint_base_url,
+                                            sheet_name = 'Ottawa',
+                                            file_name = 'projections.xlsx', 
+                                            folder = 'budgets')
+
+    # Keeping columns of interest and renaming them
+    t = projections.isin([terms[-1]]).loc[0,].to_list()
+    column = [i for i, x in enumerate(t) if x]
+    df1 = projections[['School', 'Program', 'Previous Program Codes', 'Active']]
+    df2 = projections.iloc[:,column[0]:column[0]+3]
+    projections = pd.concat([df1, df2], axis = 1)
+    projections.columns=['school', 'program', 'previous program codes', 'active', 'term',
+                            'level', 'international']
+    
+    # Only active programs with and actual intake (non-zero budget) are going to be kept. 
+    projections = projections.loc[(projections['active']=='Y')&(projections['level']==1),['school','program','international']]
+    
+    # Retrieving Ottawa registration numbers
+    regs = python_utils.xstl_query_term_level_campus(term = terms[-1], 
+                                                    campus = 'OTT',
+                                                    cnxn  = cnxn)
+
+    # Putting it all together
+    df_final = projections[projections['international']!=0].merge(regs.loc[regs['AAL']=='01',['program','student_id']].groupby('program').count().reset_index(), 
+                                                      on = 'program', 
+                                                      how = 'left')
+    df_final.columns = ['school', 'program','projection', 'student_count']
+    df_final['term'] = terms[-1]
+    
+    return df_final

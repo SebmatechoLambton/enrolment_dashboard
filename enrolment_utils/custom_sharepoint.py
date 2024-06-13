@@ -68,6 +68,7 @@ def sharepoint_download(sharepoint_base_url,
 
 def sharepoint_download_excel(sharepoint_base_url, 
                               file_name, 
+                              sheet_name = None,
                               folder = None):
     """
     This function downloads a dataframe embedded into a excel file directly from sharepoint.
@@ -111,9 +112,19 @@ def sharepoint_download_excel(sharepoint_base_url,
     bytes_file_obj.seek(0) #set file object to start
     
 	#read excel file and each sheet into pandas dataframe 
-    df = pd.read_excel(bytes_file_obj, engine='openpyxl', keep_default_na=False)
+    if sheet_name is None: 
+        df = pd.read_excel(bytes_file_obj, 
+                           engine='openpyxl', 
+                           keep_default_na=False)
+    if sheet_name is not None: 
+        df = pd.read_excel(bytes_file_obj, 
+                           engine='openpyxl', 
+                           sheet_name = sheet_name,
+                           keep_default_na=False)
 
     return df
+
+
 
 def sharepoint_upload(sharepoint_base_url,
                         root, 
