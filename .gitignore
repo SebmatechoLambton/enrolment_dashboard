@@ -8,4 +8,10 @@
 *.ipynb
 *.docx
 test.py
+enrolment_report_ve/
+enrolment_report_env/
+test_env/
+test/
+reports/
+Logs/
 # End of https://www.toptal.com/developers/gitignore/api/venv

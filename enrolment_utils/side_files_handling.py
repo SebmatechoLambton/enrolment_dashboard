@@ -191,5 +191,5 @@ def setting_order_budget_ottawa(terms: List[str],
                                                       how = 'left')
     df_final.columns = ['school', 'program','projection', 'student_count']
     df_final['term'] = terms[-1]
-    
+    df_final = df_final.fillna(0, inplace = True)
     return df_final
