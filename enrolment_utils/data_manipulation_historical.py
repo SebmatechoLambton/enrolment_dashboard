@@ -1,9 +1,20 @@
+
 import pandas as pd 
 import numpy as np
 import datetime as dt
+from typing import List
+import pyodbc
 from enrolment_utils import queries_historical, custom_sharepoint
 
-def AppsEndofCycle(order, terms, cnxn):
+def AppsEndofCycle(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
+    """
+    This function takes the order dataframe and adds the number of applications for each program in the terms specified.
+    The function uses the queries_historical.AppsEndofCycleQuery function to get the data from the database.
+    The function returns the order dataframe with the new columns added.
+
+    """
     for term in terms: 
         k = int(terms[-1][0:4]) - int(term[0:4])
         dataset = queries_historical.AppsEndofCycleQuery(term, cnxn)
@@ -20,7 +31,21 @@ def AppsEndofCycle(order, terms, cnxn):
     return order
 
 
-def OffersEndofCycle(order, terms, cnxn):
+def OffersEndofCycle(order:pd.DataFrame, 
+                     terms:List[str], 
+                     cnxn:pyodbc.connect)->pd.DataFrame:
+    """
+    Retrieves and manipulates historical enrollment data to calculate the number of offers made for each program at the end of a cycle.
+
+    Parameters:
+    order (pd.DataFrame): The input DataFrame containing program information.
+    terms (List[str]): A list of terms for which the offers need to be calculated.
+    cnxn (pyodbc.connect): The database connection object.
+
+    Returns:
+    pd.DataFrame: The modified DataFrame with the number of offers made for each program.
+
+    """
     for term in terms: 
         dataset = queries_historical.OffersEndofCycleQuery(term, cnxn)
         # 'dataset' holds the input data for this script
@@ -46,7 +71,21 @@ def OffersEndofCycle(order, terms, cnxn):
     return order
 
 
-def ConfirmationsEndofCycle(order, terms, cnxn):
+def ConfirmationsEndofCycle(order: pd.DataFrame, 
+                            terms: List[str], 
+                            cnxn: pyodbc.connect) -> pd.DataFrame:
+    """
+    Retrieves confirmation data for the specified terms and updates the 'order' DataFrame with the results.
+
+    Args:
+        order (pd.DataFrame): The DataFrame containing the order data.
+        terms (List[str]): A list of terms for which confirmation data needs to be retrieved.
+        cnxn (pyodbc.connect): The pyodbc connection object used to connect to the database.
+
+    Returns:
+        pd.DataFrame: The updated 'order' DataFrame with confirmation data.
+
+    """
     for term in terms: 
         dataset = queries_historical.ConfirmationsEndofCycleQuery(term, cnxn)
         dataset['Level'] = dataset['Level'].fillna(1) # assumption. If level is missing, assume as AAL01
@@ -61,7 +100,22 @@ def ConfirmationsEndofCycle(order, terms, cnxn):
 
 
 
-def RegistrationsEndofCycle(order, terms, cnxn):
+def RegistrationsEndofCycle(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
+    """
+    Retrieves registration data for the specified terms and performs data manipulation.
+
+    Parameters:
+    order (pd.DataFrame): The input DataFrame representing the order of programs.
+    terms (List[str]): A list of terms for which registration data needs to be retrieved.
+    cnxn (pyodbc.connect): The connection object for the database.
+
+    Returns:
+    pd.DataFrame: The modified order DataFrame with additional columns representing the count of registrations for each program in the specified terms.
+
+    """
+
     for term in terms:
         dataset = queries_historical.RegistrationsEndofCycleQuery(term, cnxn)
         # dataset['AAL'] = dataset['AAL'].astype(int)
@@ -79,7 +133,7 @@ def RegistrationHistorical(order,
                            sharepoint_user,
                            sharepoint_password,
                            sharepoint_base_url,
-                           terms = ['2017F','2018F','2019F','2020F','2021F','2022F']):
+                           terms = ['2020F','2021F','2022F','2022']):
     final_df = pd.DataFrame()
     for term in terms:
         dataset = custom_sharepoint.sharepoint_download_excel(sharepoint_user = sharepoint_user,

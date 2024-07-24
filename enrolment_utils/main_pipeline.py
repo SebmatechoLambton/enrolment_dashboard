@@ -230,6 +230,10 @@ def enroment_dashboard_update(intake:str):
 						   																				sheet_name = 'regs_all_progs_all_aals_ott', 
                                                             											index = False)
 
+		side_files_handling.registration_counts(terms = terms, 
+										  cnxn = cnxn).to_excel(excel_writer = writer, 
+															sheet_name = 'registration_counts', 
+															index = False)
 		order.to_excel(writer, 
                     sheet_name = 'order', 
                     index = False)# ok
@@ -276,10 +280,7 @@ def enroment_dashboard_update(intake:str):
 						   												sheet_name = 'confs_cumulative', 
                                                             			index = False)
 		
-		side_files_handling.registration_counts(terms = terms, 
-										  cnxn = cnxn).to_excel(excel_writer = writer, 
-															sheet_name = 'registration_counts', 
-															index = False)
+
 
 		print('[Info] probabilities of hitting budgets added successfully')
 		logger.info('probabilities of hitting budgets added successfully.')

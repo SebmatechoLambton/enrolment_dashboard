@@ -30,8 +30,8 @@ def retrieving_apps_program_per_term_per_date(program:str,
     """
     if cnxn is None: 
         cnxn = python_utils.get_connection()
-    query = """
-    DECLARE @CURRENT_DATE AS DATETIME = '"""+date+"""'
+    query = f"""
+    DECLARE @CURRENT_DATE AS DATETIME = '{date}'
 
 SELECT     @CURRENT_DATE as ds, 
         COUNT(APPL_APPLICANT) as y
@@ -60,8 +60,8 @@ JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
 		)
 JOIN PERSON P ON APPL_APPLICANT = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM = '"""+term+"""'
-AND APPL_ACAD_PROGRAM = '"""+program+"""'
+WHERE APPL_START_TERM = '{term}'
+AND APPL_ACAD_PROGRAM = '{program}'
         
     """
     query = pd.read_sql(query, cnxn)
@@ -152,8 +152,8 @@ def retrieving_confs_program_per_term_per_date(program:str,
     """
     if cnxn is None: 
         cnxn = python_utils.get_connection()
-    query = """
-    DECLARE @CURRENT_DATE AS DATETIME = '"""+date+"""'
+    query = f"""
+    DECLARE @CURRENT_DATE AS DATETIME = '{date}'
 
 SELECT     @CURRENT_DATE as date, 
         APPL_APPLICANT as applications
@@ -183,8 +183,8 @@ JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
 		)
 JOIN PERSON P ON APPL_APPLICANT = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM = '"""+term+"""'
-AND APPL_ACAD_PROGRAM = '"""+program+"""'
+WHERE APPL_START_TERM = '{term}'
+AND APPL_ACAD_PROGRAM = '{program}'
         
     """
     dataframe = pd.read_sql(query, cnxn)
@@ -306,9 +306,9 @@ def retrieving_regs_program_per_term_per_date(program:str,
     #     GROUP BY SUBSTRING(STC_COURSE_NAME, 6, 4);
 
     
-    query = """
+    query = f"""
     
-    DECLARE @CURRENT_DATE AS DATETIME = '"""+date+"""'
+    DECLARE @CURRENT_DATE AS DATETIME = '{date}'
 SELECT 
     @CURRENT_DATE as ds,
     COUNT(STC_PERSON_ID) AS y
@@ -320,8 +320,8 @@ JOIN STC_STATUSES BB ON AA.STUDENT_ACAD_CRED_ID = BB.STUDENT_ACAD_CRED_ID
         WHERE STUDENT_ACAD_CRED_ID = AA.STUDENT_ACAD_CRED_ID
             AND STC_STATUS_DATE <= @CURRENT_DATE
     )
-WHERE STC_TERM = '"""+term+"""'
-    AND SUBSTRING(STC_COURSE_NAME, 6, 4)='"""+program+"""'
+WHERE STC_TERM = '{term}'
+    AND SUBSTRING(STC_COURSE_NAME, 6, 4)='{program}'
     AND STC_SECTION_NO = CASE 
                             WHEN SUBSTRING(STC_COURSE_NAME, 6, 4) = 'FIRE' THEN '04'
                             WHEN SUBSTRING(STC_COURSE_NAME, 6, 4) = 'TREX' THEN '03'

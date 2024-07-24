@@ -1,51 +1,56 @@
 import pandas as pd
 import numpy as np
+import pyodbc
 
-def ApplicationsQuery(term,number,cnxn):
-    """Query to extract relevant data about applications.
+def ApplicationsQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
+	"""Query to extract relevant data about applications.
 
-    Args:
-        term (string):term to be used when retreiving information
-        number (string): Number of years to go back so numbers can be as of this day in previous years
-        cnxn (pyodbc.connect): Conection string to access the database
-    
-    Returns:
-		dataframe with data of interest
-        
-    Example Usage:
-    
-    """
-    query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE())
+	Args:
+		term (str): Term to be used when retrieving information.
+		number (str): Number of years to go back so numbers can be as of this day in previous years.
+		cnxn (pyodbc.connect): Connection string to access the database.
+	
+	Returns:
+		pd.DataFrame: Dataframe with data of interest.
+		
+	Example Usage:
+	
+	"""
+	query = f"""
+	DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, {number}, GETDATE())
 
-SELECT 
-    APPL_APPLICANT AS Applicant_ID
-	,APPL_ACAD_PROGRAM AS Program
-	,APPL_PRIORITY AS Level
-    ,APPL_STATUS as status
-FROM APPLICATIONS AA
-JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
-	AND POS = (
-		SELECT TOP 1 POS
-		FROM APPL_STATUSES
-		WHERE APPLICATIONS_ID = AA.APPLICATIONS_ID
-			AND APPL_STATUS_DATE <= @STAT_DATE
+	SELECT 
+		APPL_APPLICANT AS Applicant_ID
+		,APPL_ACAD_PROGRAM AS Program
+		,APPL_PRIORITY AS Level
+		,APPL_STATUS as status
+	FROM APPLICATIONS AA
+	JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
+		AND POS = (
+			SELECT TOP 1 POS
+			FROM APPL_STATUSES
+			WHERE APPLICATIONS_ID = AA.APPLICATIONS_ID
+				AND APPL_STATUS_DATE <= @STAT_DATE
 		)
-JOIN PERSON P ON APPL_APPLICANT = P.ID
-JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM = '"""+term+"""'
-ORDER BY APPL_APPLICANT
-	,APPL_ACAD_PROGRAM
-        
-    """
-    query = pd.read_sql(query, cnxn)
-    return(query)
+	JOIN PERSON P ON APPL_APPLICANT = P.ID
+	JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
+	WHERE APPL_START_TERM = '{term}'
+	ORDER BY APPL_APPLICANT
+		,APPL_ACAD_PROGRAM
+
+	"""
+	query = pd.read_sql(query, cnxn)
+	return query
 
 
 
 # DLT to be included in the system on November 2022. 
 
-def OffersQuery(term,number, cnxn):
+def OffersQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
     """Query to extract relevant data about offers.
 
     Args:
@@ -53,8 +58,8 @@ def OffersQuery(term,number, cnxn):
         number (string): Number of years to go back so numbers can be as of this day in previous years
         cnxn (pyodbc.connect): Conection string to access the database
     """
-    query = """
-    DECLARE @STAT_DATE AS DATETIME =  DATEADD(YEAR, -"""+number+""", GETDATE());
+    query = f"""
+    DECLARE @STAT_DATE AS DATETIME =  DATEADD(YEAR, -{number}, GETDATE());
 SELECT APPL_APPLICANT AS Applicant_ID
 ,APPL_START_TERM
 ,APPL_ACAD_PROGRAM AS Program
@@ -79,7 +84,7 @@ AND APPL_STATUS_DATE <= @STAT_DATE
 )
 JOIN PERSON P ON APPL_APPLICANT = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM = '"""+term+"""'
+WHERE APPL_START_TERM = '{term}'
 ORDER BY APPL_APPLICANT
 ,APPL_ACAD_PROGRAM
     """
@@ -88,7 +93,9 @@ ORDER BY APPL_APPLICANT
 
 
 
-def TableauQuery(term,number, cnxn):
+def TableauQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
     """Query to extract relevant data about the "Tableau" data.
 
     Args:
@@ -96,8 +103,8 @@ def TableauQuery(term,number, cnxn):
         number (string): Number of years to go back so numbers can be as of this day in previous years
         cnxn (pyodbc.connect): Conection string to access the database
     """
-    query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+    query = f"""
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT APPL_ACAD_PROGRAM AS Program
 	,APPL_STATUS AS Curr_Status
@@ -113,16 +120,18 @@ JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
 		)
 JOIN PERSON ON APPL_APPLICANT = ID
 LEFT JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM = '"""+term+"""'
+WHERE APPL_START_TERM = '{term}'
     """
     query = pd.read_sql(query, cnxn)
     return(query)
 
 
-def ConfirmationsQuery(term,number, cnxn):
+def ConfirmationsQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
     
     query = """
-    DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE())
+    DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE())
     SELECT APPL_ACAD_PROGRAM AS Program, 
     REPLACE(
         REPLACE(REPLACE((CAST((
@@ -138,7 +147,7 @@ def ConfirmationsQuery(term,number, cnxn):
     join APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID and POS = (SELECT TOP 1 POS FROM  APPL_STATUSES WHERE APPLICATIONS_ID = AA.APPLICATIONS_ID AND APPL_STATUS_DATE <= @STAT_DATE  )
     JOIN PERSON P ON APPL_APPLICANT = P.ID
     JOIN ADDRESS on ADDRESS_ID = PREFERRED_ADDRESS 
-    WHERE APPL_START_TERM = '"""+term+"""'
+    WHERE APPL_START_TERM = '{term}'
     ORDER BY APPL_APPLICANT, APPL_ACAD_PROGRAM
     """
     query = pd.read_sql(query, cnxn)
@@ -149,7 +158,7 @@ def ConfirmationsQuery(term,number, cnxn):
 def FirstApplicationsQuery(term,number, cnxn):
     
     query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT APPL_APPLICANT AS Applicant_ID
 	,APPL_ACAD_PROGRAM AS Program
@@ -165,7 +174,7 @@ JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
 		)
 JOIN PERSON ON APPL_APPLICANT = ID
 LEFT JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM = '"""+term+"""'
+WHERE APPL_START_TERM = '{term}'
 ORDER BY APPL_ACAD_PROGRAM
 	,APPL_STATUS
 	,APPL_APPLICANT
@@ -174,11 +183,13 @@ ORDER BY APPL_ACAD_PROGRAM
     return(query)
 
 
-def MapInfoQuery(term,number, cnxn):
+def MapInfoQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
 
     
-    query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+    query = f"""
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT 
 	APPL_APPLICANT AS Applicant_ID
@@ -204,7 +215,7 @@ JOIN APPL_STATUSES BB ON AA.APPLICATIONS_ID = BB.APPLICATIONS_ID
 		)
 JOIN PERSON P ON APPL_APPLICANT = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE APPL_START_TERM =  '"""+term+"""'
+WHERE APPL_START_TERM =  '{term}'
 ORDER BY APPL_APPLICANT
 	,APPL_ACAD_PROGRAM
     """
@@ -217,7 +228,7 @@ def DomesticRegistrationsQuery(term,number, cnxn):
 
     
     query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT STC_PERSON_ID AS Applicant_ID
 	,IMMIGRATION_STATUS AS 'Imm. Status'
@@ -238,7 +249,7 @@ JOIN STUDENT_COURSE_SEC SCS ON SCS.STUDENT_COURSE_SEC_ID = AA.STC_STUDENT_COURSE
 JOIN STUDENT_TERMS ON STUDENT_TERMS_ID = STC_PERSON_ID + '*' + STC_TERM + '*' + STC_ACAD_LEVEL
 JOIN PERSON P ON STC_PERSON_ID = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE STC_TERM = '"""+term+"""'
+WHERE STC_TERM = '{term}'
 	AND STC_SUBJECT = 'CTRL'
 ORDER BY STC_PERSON_ID
 	,STC_COURSE_NAME
@@ -249,10 +260,12 @@ ORDER BY STC_PERSON_ID
 
 
 
-def InternationalRegistrationsQuery(term,number, cnxn):
+def InternationalRegistrationsQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
     
-    query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+    query = f"""
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT STC_PERSON_ID AS Applicant_ID
 	,IMMIGRATION_STATUS AS 'Imm. Status'
@@ -273,7 +286,7 @@ JOIN STUDENT_COURSE_SEC SCS ON SCS.STUDENT_COURSE_SEC_ID = AA.STC_STUDENT_COURSE
 JOIN STUDENT_TERMS ON STUDENT_TERMS_ID = STC_PERSON_ID + '*' + STC_TERM + '*' + STC_ACAD_LEVEL
 JOIN PERSON P ON STC_PERSON_ID = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE STC_TERM = '"""+term+"""'
+WHERE STC_TERM = '{term}'
 	AND STC_SUBJECT = 'CTRL'
 ORDER BY STC_PERSON_ID
 	,STC_COURSE_NAME
@@ -281,11 +294,13 @@ ORDER BY STC_PERSON_ID
     query = pd.read_sql(query, cnxn)
     return(query)
 
-def RegistrationsRatesQuery(term,number, cnxn):
+def RegistrationsRatesQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
 
     
     query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT STC_PERSON_ID AS Applicant_ID
 	,IMMIGRATION_STATUS AS 'Imm. Status'
@@ -306,7 +321,7 @@ JOIN STUDENT_COURSE_SEC SCS ON SCS.STUDENT_COURSE_SEC_ID = AA.STC_STUDENT_COURSE
 JOIN STUDENT_TERMS ON STUDENT_TERMS_ID = STC_PERSON_ID + '*' + STC_TERM + '*' + STC_ACAD_LEVEL
 JOIN PERSON P ON STC_PERSON_ID = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE STC_TERM = '"""+term+"""'
+WHERE STC_TERM = '{term}'
 	AND STC_SUBJECT = 'CTRL'
 ORDER BY STC_PERSON_ID
 	,STC_COURSE_NAME
@@ -316,10 +331,12 @@ ORDER BY STC_PERSON_ID
 
 
 
-def RegistrationsBudgetQuery(term,number, cnxn):
+def RegistrationsBudgetQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
     
-    query = """
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -"""+number+""", GETDATE());
+    query = f"""
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR, -{number}, GETDATE());
 
 SELECT STC_PERSON_ID AS Applicant_ID
 	,SUBSTRING(STC_COURSE_NAME, 6, 4) AS Program
@@ -339,7 +356,7 @@ JOIN STUDENT_COURSE_SEC SCS ON SCS.STUDENT_COURSE_SEC_ID = AA.STC_STUDENT_COURSE
 JOIN STUDENT_TERMS ON STUDENT_TERMS_ID = STC_PERSON_ID + '*' + STC_TERM + '*' + STC_ACAD_LEVEL
 JOIN PERSON P ON STC_PERSON_ID = P.ID
 JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-WHERE STC_TERM = '"""+term+"""'
+WHERE STC_TERM = '{term}'
 	AND STC_SUBJECT = 'CTRL'
 ORDER BY STC_PERSON_ID
 	,STC_COURSE_NAME
@@ -349,12 +366,14 @@ ORDER BY STC_PERSON_ID
 
 
 
-def ReturningStudentsQuery(term,number, cnxn):
+def ReturningStudentsQuery(term: str, 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
 
     
-    query = """
-DECLARE @TERM AS VARCHAR(10) = '"""+term+"""';
-DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR,  -"""+number+""", GETDATE());
+    query = f"""
+DECLARE @TERM AS VARCHAR(10) = '{term}';
+DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR,  -{number}, GETDATE());
 
 WITH T1 (
 	STC_PERSON_ID
@@ -468,8 +487,8 @@ ORDER BY SPONSORSHIP DESC
     return(query)
 
 def xstl_query_term_level_campus(term: str, 
-              number, 
-              cnxn  ): 
+                      number: str, 
+                      cnxn: pyodbc.connect) -> pd.DataFrame:
     """
     This query pulls the exact same information as a XSTL report
 
@@ -487,9 +506,9 @@ def xstl_query_term_level_campus(term: str,
                                             campus = 'MAIN')
     """
 
-    query = """
-    DECLARE @TERM AS VARCHAR(10) = '"""+term+"""';
-    DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR,  -"""+number+""", GETDATE());
+    query = f"""
+    DECLARE @TERM AS VARCHAR(10) = '{term}';
+    DECLARE @STAT_DATE AS DATETIME = DATEADD(YEAR,  -{number}, GETDATE());
 
     SELECT STC_PERSON_ID AS student_id
         ,FIRST_NAME as first_name
@@ -519,7 +538,7 @@ def xstl_query_term_level_campus(term: str,
     JOIN STUDENT_TERMS ON STUDENT_TERMS_ID = STC_PERSON_ID + '*' + STC_TERM + '*' + STC_ACAD_LEVEL
     JOIN PERSON P ON STC_PERSON_ID = P.ID
     JOIN ADDRESS ON ADDRESS_ID = PREFERRED_ADDRESS
-    WHERE STC_TERM = '"""+term+"""'
+    WHERE STC_TERM = '{term}'
         AND STC_SUBJECT = 'CTRL'
         AND SCS_LOCATION = 'MAIN'
         AND STC_ACAD_LEVEL = 'PS'

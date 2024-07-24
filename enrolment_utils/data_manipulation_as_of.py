@@ -7,7 +7,9 @@ from enrolment_utils import queries_as_of
 # from tqdm import tqdm
 
 
-def Applications(order, terms, cnxn):
+def Applications(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """This function transforms the ingested data regarding applications
         - If level is missing is filled as 01 
         - AAL 04 for FIRE, AALs 01 and 03 for TREX and AAL 01 for the rest of the programs
@@ -57,7 +59,9 @@ def Applications(order, terms, cnxn):
 
 
 
-def DeletedApplications(order, terms, cnxn):
+def DeletedApplications(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """This function transforms the ingested data regarding applications
         - If level is missing is filled as 01 
         - AAL 04 for FIRE, AALs 01 and 03 for TREX and AAL 01 for the rest of the programs
@@ -106,7 +110,9 @@ def DeletedApplications(order, terms, cnxn):
         order = order.fillna(0)
     return order
 
-def Offers(order, terms, cnxn):
+def Offers(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """This function transforms the ingested data regarding offers
         - same items as applications
         - prior to 2022F, the statuses WAC, WCF, MTS, MVD, WMS, ACC, ACU, HMS, WTN, AOF where track in previous statuses, if status is DNA is current status, ACC and ACU are required as previous status
@@ -170,7 +176,9 @@ def Offers(order, terms, cnxn):
     return order
 
 
-def TableauOutstandingOffers(order, terms, cnxn):
+def TableauOutstandingOffers(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of oustanding offers per program per reporting term 
     
@@ -227,7 +235,9 @@ def TableauOutstandingOffers(order, terms, cnxn):
     return order
 
 
-def TableauConfirmations(order, terms, cnxn):
+def TableauConfirmations(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of confirmations per program per reporting term, according to the Tableau report (Heather would know)
     
@@ -280,7 +290,9 @@ def TableauConfirmations(order, terms, cnxn):
     order = order.fillna(0)
     return order
 
-def TableauHolds(order, terms, cnxn):
+def TableauHolds(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of holds per program per reporting term, according to the Tableau report (Heather would know)
     
@@ -335,7 +347,9 @@ def TableauHolds(order, terms, cnxn):
     order = order.fillna(0)
     return order
 
-def TableauWithdrawals(order, terms, cnxn):
+def TableauWithdrawals(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of Withdrawals per program per reporting term, according to the Tableau report (Heather would know)
     
@@ -387,7 +401,9 @@ def TableauWithdrawals(order, terms, cnxn):
     order = order.fillna(0)
     return order
 
-def TableauWaitlist(order, terms, cnxn):
+def TableauWaitlist(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of waitlisted per program per reporting term, according to the Tableau report (Heather would know)
     
@@ -441,7 +457,9 @@ def TableauWaitlist(order, terms, cnxn):
     return order
 
 
-def confirmations(order, terms, cnxn):
+def confirmations(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of confirmations per program per reporting term
     
@@ -483,7 +501,9 @@ def confirmations(order, terms, cnxn):
     order = order.fillna(0)
     return order
 
-def FirstApplications(order, terms, cnxn):
+def FirstApplications(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of first choice applications per program per reporting term
     
@@ -524,7 +544,8 @@ def FirstApplications(order, terms, cnxn):
 
 
 # In this section, be mindful of correcting also the age factor when computing age in the python section  
-def MapInfo(terms, cnxn):
+def MapInfo(terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions summerizes data regarding the enrolment trends to be visualized within a map. 
     
@@ -575,7 +596,9 @@ def MapInfo(terms, cnxn):
     return dataset_final
 
 
-def DomesticRegs(order, terms, cnxn):
+def DomesticRegs(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of domestic registrations per program per reporting term
     
@@ -625,7 +648,9 @@ def DomesticRegs(order, terms, cnxn):
 
 
 
-def InternationalRegs(order, terms, cnxn):
+def InternationalRegs(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of international registrations per program per reporting term
     
@@ -672,7 +697,9 @@ def InternationalRegs(order, terms, cnxn):
     return order
 
 
-def RegistrationsRates(order, terms, cnxn):
+def RegistrationsRates(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of registrations per program per reporting term for rates reporting purposes
     
@@ -720,7 +747,9 @@ def RegistrationsRates(order, terms, cnxn):
     return order
 
 
-def RegistrationsBudget(order, terms, cnxn):
+def RegistrationsBudget(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of registrations per program per reporting term for tracking budget accomplishments
     
@@ -768,7 +797,10 @@ def RegistrationsBudget(order, terms, cnxn):
 
 
 
-def term01deposits(order, terms, cnxn, sv_flag = False):
+def term01deposits(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect, 
+                 sv_flag = False)->pd.DataFrame:
     """
     This functions computes the number of returnings per program per reporting term for tracking budget accomplishments
     
@@ -844,7 +876,9 @@ def term01deposits(order, terms, cnxn, sv_flag = False):
     return order
     
     
-def NewStudents(order, terms, cnxn):
+def NewStudents(order:pd.DataFrame, 
+                 terms:List[str], 
+                 cnxn:pyodbc.connect)->pd.DataFrame:
     """
     This functions computes the number of new per program per reporting term for tracking budget accomplishments
     
