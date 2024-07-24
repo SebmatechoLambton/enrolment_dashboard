@@ -522,6 +522,7 @@ def xstl_query_term_level_campus(term: str,
     WHERE STC_TERM = '"""+term+"""'
         AND STC_SUBJECT = 'CTRL'
         AND SCS_LOCATION = 'MAIN'
+        AND STC_ACAD_LEVEL = 'PS'
         AND STC_STATUS IN ('A','D','N')
     ORDER BY STC_PERSON_ID
         ,STC_COURSE_NAME

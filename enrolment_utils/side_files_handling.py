@@ -1,6 +1,6 @@
 import pandas as pd
 from enrolment_utils import custom_sharepoint, global_params, python_utils
-
+import enrolment_utils.python_utils as utils_geral
 from typing import List
 
 
@@ -44,7 +44,7 @@ def setting_order_budget(terms: List[str],
     # Columns of interest
     projections.columns=['School', 'Program', 'Previous Program Codes', 'Active', 'Term',
                         'Level', 'Domestic', 'International', 'Total FT',
-                        'Second Career', 'CODA', 'WSIB', 'Total WFU Eligible',
+                        'Second Career', 'COD   A', 'WSIB', 'Total WFU Eligible',
                         'WFU', 'Duration', 'WFU Total']
 
     # Only active programs with and actual intake (non-zero budget) are going to be kept. 
@@ -52,8 +52,8 @@ def setting_order_budget(terms: List[str],
                                 ((projections['Level']==4) & (projections['Program']=='FIRE'))|
                                 ((projections['Level']==3) & (projections['Program']=='TREX'))),
                                   ['School','Program','Total FT']]
-
-    projections = projections[projections['Total FT'] > 0].rename(columns = {'Total FT':'Budget'})
+    projections['Total FT'] = projections['Total FT'].replace({'':'0'}).astype(int)
+    projections = projections[projections['Total FT']> 0].rename(columns = {'Total FT':'Budget'})
     projections['Budget'] = projections['Budget'].astype(int)
 
     projections['Program'] = projections['Program'].str[:4]
@@ -193,3 +193,49 @@ def setting_order_budget_ottawa(terms: List[str],
     df_final['term'] = terms[-1]
     df_final = df_final.fillna(0)
     return df_final
+
+def registration_counts(terms:List[str], 
+                        cnxn)-> pd.DataFrame:
+    """
+    This function provides a dataframe with desaggregated registrations counts, by registration type (F, P, O, T, C ), 
+    student type (domestic, international) and campus (Sarnia and Ottawa). 
+
+    Output: 
+        Dataframe containing columns: location, program, current_load, imm_status, student_id
+
+    Example Usage: 
+        registration_counts(terms = ['2023F','2024F'], 
+                            cnxn = cnxn )
+                            
+    """
+    # Compiling overall registrations. 
+    total_registrations = utils_geral.xstl_query_term_level_campus(term = terms[-1], 
+    																 campus = 'MAIN',
+    																 cnxn  = cnxn).append(utils_geral.xstl_query_term_level_campus(term = terms[-1], 
+    																 campus = 'OTT',
+    																 cnxn  = cnxn))
+    # Keeping PS programs only. 
+    total_registrations = total_registrations[(total_registrations['acad_level']=='PS')]
+
+    # Creating counts
+    total_registrations = total_registrations[['student_id', 'imm_status', 'location',
+           'program', 'current_load']].groupby(['location','program','current_load','imm_status']).count().reset_index()
+
+    # Re-wording 
+    total_registrations['current_load'] = total_registrations['current_load'].map({'F':'Full-time regs', 
+                                             'T': 'Potential regs', 
+                                             'P':'Part-time regs', 
+                                             'O':'Full-time regs', 
+                                            'C':'Coop'})
+    
+    total_registrations['imm_status'] = total_registrations['imm_status'].map({
+        'CA':'Domestic', 
+        'NA': 'Domestic', 
+        'SV': 'International', 
+        'PR':'Domestic', 
+        'CR':'Domestic'
+    })
+    
+    total_registrations['location'] = total_registrations['location'].map({'MAIN':'Sarnia','OTT':'Ottawa'})
+    
+    return total_registrations

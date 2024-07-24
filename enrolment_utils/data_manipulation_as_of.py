@@ -1064,7 +1064,7 @@ def registrations(order: pd.DataFrame,
         dataset = queries_as_of.xstl_query_term_level_campus(term,str(k), cnxn)
         
         # not interested in coop students
-        dataset = dataset[dataset['current_load'].isin(['F','O','P','T'])]
+        dataset = dataset[dataset['current_load'].isin(['F','O'])]
 
         # assumption. If level is missing, assume as AAL01. Setting it as integer
         dataset['AAL'] = dataset['AAL'].astype(str)

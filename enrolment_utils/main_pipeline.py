@@ -215,10 +215,19 @@ def enroment_dashboard_update(intake:str):
 		logger.info('Ottawa Information compiled successfully.')
 		# All registrations all programs all AALs
 		total_registrations = utils_geral.xstl_query_term_level_campus(term = terms[-1], 
+																 campus = 'MAIN',
 																 cnxn  = cnxn)
 		total_registrations = total_registrations[(total_registrations['acad_level']=='PS')&(total_registrations['current_load'].isin(['F','O']))]
 		total_registrations[['student_id','program']].groupby('program').count().reset_index().to_excel(excel_writer = writer, 
 						   																				sheet_name = 'regs_all_progs_all_aals', 
+                                                            											index = False)
+		
+		total_registrations_ott = utils_geral.xstl_query_term_level_campus(term = terms[-1], 
+																	 campus = 'OTT',
+																	 cnxn  = cnxn)
+		total_registrations_ott = total_registrations_ott[(total_registrations_ott['acad_level']=='PS')&(total_registrations_ott['current_load'].isin(['F','O']))]
+		total_registrations_ott[['student_id','program']].groupby('program').count().reset_index().to_excel(excel_writer = writer, 
+						   																				sheet_name = 'regs_all_progs_all_aals_ott', 
                                                             											index = False)
 
 		order.to_excel(writer, 
@@ -254,6 +263,7 @@ def enroment_dashboard_update(intake:str):
 											start_year = int(terms[0][:4]),
 											end_year = int(terms[-1][:4]),
 											file_name = file_name_order,
+											test_mode = True, ###### testing mode
 											cnxn = cnxn).to_excel(excel_writer = writer, 
 						   												sheet_name = 'probability_targets', 
                                                             			index = False)
@@ -265,6 +275,11 @@ def enroment_dashboard_update(intake:str):
 													  		folder = 'confirmations').to_excel(excel_writer = writer, 
 						   												sheet_name = 'confs_cumulative', 
                                                             			index = False)
+		
+		side_files_handling.registration_counts(terms = terms, 
+										  cnxn = cnxn).to_excel(excel_writer = writer, 
+															sheet_name = 'registration_counts', 
+															index = False)
 
 		print('[Info] probabilities of hitting budgets added successfully')
 		logger.info('probabilities of hitting budgets added successfully.')

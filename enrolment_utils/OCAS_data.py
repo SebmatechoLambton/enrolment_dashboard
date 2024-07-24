@@ -279,7 +279,7 @@ def OCAS_enrolment_report_province_format(dataset: pd.DataFrame,
     This function transform OCAS provincial report data into the same data representation found on the portal 
     
     Args: 
-        dataset (pd.DataFrame): dataset with OCAS comprehensive report clean data
+        dataset (pd.DataFrame): dataset with OCAS comprehensive report cleaned data
         terms (List): List of terms for current reporting cycle
     
     Returns 
@@ -334,7 +334,7 @@ def OCAS_enrolment_report_province_format(dataset: pd.DataFrame,
     
     dataset.insert(8, f'confs_difference_{terms[-2][:4]}_{terms[-3][:4]}', 
                    np.round(((dataset[f'confirmation_{terms[-2][:4]}'] - dataset[f'confirmation_{terms[-3][:4]}']) / dataset[f'confirmation_{terms[-3][:4]}']) * 100,2))
-    dataset.insert(10, f'confs_difference_{terms[-1][:4]}_{terms[-1][:4]}', 
+    dataset.insert(10, f'confs_difference_{terms[-1][:4]}_{terms[-2][:4]}', 
                    np.round(((dataset[f'confirmation_{terms[-1][:4]}'] - dataset[f'confirmation_{terms[-2][:4]}']) / dataset[f'confirmation_{terms[-2][:4]}']) * 100,2))
         
     # Adding college size flag

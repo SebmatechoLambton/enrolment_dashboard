@@ -143,6 +143,7 @@ def getting_target_probabilities_program(program:str,
                                          end_year:int,
                                          term: str, 
                                          file_name_budget: str,
+                                         test_mode: bool = False,
                                          cnxn: pyodbc.Connection = None):
     """
     This function creates a forecasted value for target value and a probability to reach target for a given program
@@ -153,6 +154,7 @@ def getting_target_probabilities_program(program:str,
         end_year (int): start year to start tracking historical data
         term (str): Term of interest
         file_name_budget (str): file containing budget numbers of interest
+        test_mode (bool): If True, will not compute probabilites, recommended when testing (set as False by default)
         cnxn (pyodbc.Connection): Connection to retrieve data from (set as None by default)
         
     Returns: 
@@ -179,78 +181,87 @@ def getting_target_probabilities_program(program:str,
         cnxn = python_utils.get_connection()
 
     # Getting programs historical data
-    dataframe = program_full_data(program = program, 
-                                  start_year = start_year, 
-                                  end_year = end_year,
-                                  term = term,
-                                  cnxn = cnxn,
-                                  folder_name = 'registrations')
-    # apps 
-    program_full_data(program = program, 
-                                  start_year = start_year, 
-                                  end_year = end_year,
-                                  term = term,
-                                  cnxn = cnxn,
-                                  folder_name= 'applications')
-    
-	# confs
-    program_full_data(program = program, 
-                                  start_year = start_year, 
-                                  end_year = end_year,
-                                  term = term,
-                                  cnxn = cnxn,
-                                  folder_name= 'confirmations')
-    # Creating and fitting model 
-    
-    model = Prophet() # Thanks facebook! 
-    model.fit(dataframe)
-
-    # Counting number of days to reach end of cycle + day 10th (more or less 14 days more )
-    periods = final_enrolment_day_be_term(term = term) + 15
-
-	# Forecasting to the data up to end of enrolment cycle (september 20)
-    future = model.make_future_dataframe(periods = periods)
-    forecast = model.predict(future)
-
-	# Keeping forecasted values
-    today = datetime.now().date()
-    if periods < 30: 
-        two_months_ago = today - timedelta(days=60)
-        mask = (forecast['ds'] > two_months_ago.strftime(format = '%Y-%m-%d'))
-    else:
-        mask = (forecast['ds'] > today.strftime(format = '%Y-%m-%d'))
-
-	# Importing target values from target file
-    target_value = int(float(target.loc[target['Program']==program, 'target'].values[0]))
-
-	# If current registrations is greater than target value, prob of reaching target is trivially 1
-    if dataframe.iloc[-1]['y'] >= target_value: 
-        prob = 1
+    if not test_mode:
+        dataframe = program_full_data(program = program, 
+                                    start_year = start_year, 
+                                    end_year = end_year,
+                                    term = term,
+                                    cnxn = cnxn,
+                                    folder_name = 'registrations')
+        # apps 
+        program_full_data(program = program, 
+                                    start_year = start_year, 
+                                    end_year = end_year,
+                                    term = term,
+                                    cnxn = cnxn,
+                                    folder_name= 'applications')
         
-    else:
-	    # Creating probability based on distribution of forecasted values (assumption: normality)
-        # prob =0.5 
-        prob = 1-norm.cdf(target_value, loc=forecast.loc[mask, 'yhat'].mean(), scale=forecast.loc[mask, 'yhat'].std())
+        # confs
+        program_full_data(program = program, 
+                                    start_year = start_year, 
+                                    end_year = end_year,
+                                    term = term,
+                                    cnxn = cnxn,
+                                    folder_name= 'confirmations')
+        # Creating and fitting model 
+        
+        model = Prophet() # Thanks facebook! 
+        model.fit(dataframe)
+
+        # Counting number of days to reach end of cycle + day 10th (more or less 14 days more )
+        periods = final_enrolment_day_be_term(term = term) + 15
+
+        # Forecasting to the data up to end of enrolment cycle (september 20)
+        future = model.make_future_dataframe(periods = periods)
+        forecast = model.predict(future)
+
+        # Keeping forecasted values
+        today = datetime.now().date()
+        if periods < 30: 
+            two_months_ago = today - timedelta(days=60)
+            mask = (forecast['ds'] > two_months_ago.strftime(format = '%Y-%m-%d'))
+        else:
+            mask = (forecast['ds'] > today.strftime(format = '%Y-%m-%d'))
+
+        # Importing target values from target file
+        target_value = int(float(target.loc[target['Program']==program, 'target'].values[0]))
+
+        # If current registrations is greater than target value, prob of reaching target is trivially 1
+        if dataframe.iloc[-1]['y'] >= target_value: 
+            prob = 1
+            
+        else:
+            # Creating probability based on distribution of forecasted values (assumption: normality)
+            # prob =0.5 
+            prob = 1-norm.cdf(target_value, loc=forecast.loc[mask, 'yhat'].mean(), scale=forecast.loc[mask, 'yhat'].std())
+        
+            # Projected number of registrations
+            # projected_regs = dataframe.iloc[-1]['y']
+
+        # forecast
+        baseline = int((int(forecast.loc[mask, 'yhat'].max())+int(forecast.loc[mask, 'yhat'].min()))/2)
+        # baseline = int(forecast.loc[mask, 'yhat'].max())
+        if baseline < dataframe.iloc[-1]['y']: 
+            projected_regs =  dataframe.iloc[-1]['y']
+        else: 
+            projected_regs =  baseline        
+
+
+        # Building dataframe
+        dataframe = pd.DataFrame({'program': program, 
+                                'probability': prob, 
+                                'projected_regs': projected_regs }, 
+                                index = [0])
+        
+        
+        dataframe = dataframe.fillna(0)
     
-	    # Projected number of registrations
-        # projected_regs = dataframe.iloc[-1]['y']
+    if test_mode: 
+        dataframe = pd.DataFrame({'program': program, 
+                                'probability': 0, 
+                                'projected_regs': 0 }, 
+                                index = [0])
 
-    # forecast
-    baseline = int((int(forecast.loc[mask, 'yhat'].max())+int(forecast.loc[mask, 'yhat'].min()))/2)
-    # baseline = int(forecast.loc[mask, 'yhat'].max())
-    if baseline < dataframe.iloc[-1]['y']: 
-        projected_regs =  dataframe.iloc[-1]['y']
-    else: 
-        projected_regs =  baseline        
-
-
-	# Building dataframe
-    dataframe = pd.DataFrame({'program': program, 
-                              'probability': prob, 
-                              'projected_regs': projected_regs }, 
-                              index = [0])
-    
-    dataframe = dataframe.fillna(0)
 		
     return dataframe;
 
@@ -259,6 +270,7 @@ def target_probability_report(term: str,
                               file_name: str,
                               start_year:int = 2019,
                               end_year:int = 2023, 
+                              test_mode: bool = False,
                               cnxn: pyodbc.Connection = None):
     """
     This function gets the final version of hitting the target probability report for all programs on current reporting list
@@ -269,6 +281,7 @@ def target_probability_report(term: str,
         file_name (str): order file for enrolment cycle of interest
         term (str): Enrollment term of interest 
         file_name_budget (str): name of file containing budget numbers of interest 
+        test_mode (bool): If True, will not compute probabilites, recommended when testing (set as False by default)
         cnxn (pyodbc.Connection): Connection to retrieve data from (set as None by default)
         
     Returns: 
@@ -295,7 +308,8 @@ def target_probability_report(term: str,
                                                                           start_year = start_year, 
                                                                           end_year = end_year,
                                                                           file_name_budget = file_name_budget,
-                                                                          term = term,                                                                          
+                                                                          term = term,    
+                                                                          test_mode = test_mode,                                                                      
                                                                           cnxn = cnxn))
         
     return dataframe;
